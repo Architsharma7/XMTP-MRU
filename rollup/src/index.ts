@@ -7,6 +7,7 @@ import { schemas } from "./stackr/actions.ts";
 import { ERC20Machine, mru } from "./stackr/erc20.ts";
 import { transitions } from "./stackr/transitions.ts";
 import { Client, Conversation } from "@xmtp/xmtp-js";
+import cors from "cors";
 
 console.log("Starting server...");
 dotenv.config();
@@ -14,6 +15,8 @@ dotenv.config();
 const erc20Machine = mru.stateMachines.get<ERC20Machine>("erc-20");
 
 const app = express();
+app.use(cors());
+
 app.use(express.json());
 
 if (process.env.NODE_ENV === "development") {
@@ -52,27 +55,17 @@ class XMTPNotifier {
     return this.conversations.get(address)!;
   }
 
-  async notifySubscribers(
-    eventType: string,
-    message: string,
-    subscribers: Map<string, string[]>
-  ) {
-    const eventSubscribers = subscribers.get(eventType) || [];
-    for (const subscriberAddress of eventSubscribers) {
-      try {
-        const conversation = await this.getOrCreateConversation(
-          subscriberAddress
-        );
-        await conversation.send(message);
-      } catch (error) {
-        console.error(`Failed to send message to ${subscriberAddress}:`, error);
-      }
+  async notifyUser(address: string, message: string) {
+    try {
+      const conversation = await this.getOrCreateConversation(address);
+      await conversation.send(message);
+    } catch (error) {
+      console.error(`Failed to send message to ${address}:`, error);
     }
   }
 }
 
 let xmtpNotifier: XMTPNotifier;
-let subscribers: Map<string, string[]> = new Map();
 
 async function initializeXMTP() {
   const wallet = new Wallet(process.env.PRIVATE_KEY!);
@@ -131,46 +124,16 @@ app.get("/", (_req: Request, res: Response) => {
   return res.send({ state: erc20Machine?.state });
 });
 
-
 // updated event listeners to notify XMTP subscribers
 events.subscribe(ActionEvents.SUBMIT, async (args) => {
   console.log("Submitted an action", args);
-  await xmtpNotifier.notifySubscribers(
-    "actionSubmit",
-    `Action submitted: ${JSON.stringify(args)}`,
-    subscribers
-  );
-});
-
-events.subscribe(ActionEvents.EXECUTION_STATUS, async (action) => {
-  console.log("Action execution status updated", action);
-  await xmtpNotifier.notifySubscribers(
-    "executionStatus",
-    `Execution status updated: ${JSON.stringify(action)}`,
-    subscribers
-  );
-});
-
-// routes for XMTP subscription management
-app.post("/subscribe", async (req: Request, res: Response) => {
-  const { eventType, address } = req.body;
-  if (!subscribers.has(eventType)) {
-    subscribers.set(eventType, []);
+  if (args.msgSender) {
+    await xmtpNotifier.notifyUser(
+      args.msgSender as string,
+      `Action submitted: ${JSON.stringify(args)}`
+    );
+    console.log("Notified user", args.msgSender);
   }
-  subscribers.get(eventType)!.push(address);
-  res.status(200).send({ message: "Subscribed successfully" });
-});
-
-app.post("/unsubscribe", async (req: Request, res: Response) => {
-  const { eventType, address } = req.body;
-  const eventSubscribers = subscribers.get(eventType);
-  if (eventSubscribers) {
-    const index = eventSubscribers.indexOf(address);
-    if (index > -1) {
-      eventSubscribers.splice(index, 1);
-    }
-  }
-  res.status(200).send({ message: "Unsubscribed successfully" });
 });
 
 async function initializeServer() {
