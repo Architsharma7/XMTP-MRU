@@ -34,11 +34,11 @@ if (process.env.NODE_ENV === "development") {
 
 ///////////////// XMTP Integration Functions //////////////////////
 /////@note: This is a basic example of integration of XMTP with Stackr micro-rollups,
-/////@note: and does not maintain subscriptions across server restarts.
+/////@note: and does not maintain conversation across server restarts.
 
 class XMTPNotifier {
   xmtpClient: Client;
-  // mapping to store XMTP conversations, keyed by subscriber address.
+  // mapping to store XMTP conversations, keyed by msg sender address.
   conversations: Map<string, Conversation> = new Map();
 
   constructor(xmtpClient: Client) {
@@ -59,6 +59,7 @@ class XMTPNotifier {
     try {
       const conversation = await this.getOrCreateConversation(address);
       await conversation.send(message);
+      console.log(`Sent message to ${address}:`, message);
     } catch (error) {
       console.error(`Failed to send message to ${address}:`, error);
     }
@@ -126,13 +127,11 @@ app.get("/", (_req: Request, res: Response) => {
 
 // updated event listeners to notify XMTP subscribers
 events.subscribe(ActionEvents.SUBMIT, async (args) => {
-  console.log("Submitted an action", args);
   if (args.msgSender) {
     await xmtpNotifier.notifyUser(
       args.msgSender as string,
       `Action submitted: ${JSON.stringify(args)}`
     );
-    console.log("Notified user", args.msgSender);
   }
 });
 

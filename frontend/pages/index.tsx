@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import type { Signer } from "@xmtp/xmtp-js";
 
-const MRU_SERVER_URL = "http://localhost:3000";
-
 export default function Home() {
   const { isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
   const [xmtpClient, setXmtpClient] = useState<Client | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
+
+  console.log(messages ? messages : "No messages");
 
   useEffect(() => {
     if (isConnected && walletClient && !xmtpClient) {
@@ -41,6 +41,7 @@ export default function Home() {
     for await (const conversation of stream) {
       for await (const message of await conversation.streamMessages()) {
         setMessages((prevMessages) => [...prevMessages, message.content]);
+        console.log("Received message:", message);
       }
     }
   }
@@ -55,7 +56,7 @@ export default function Home() {
           <div>
             <h2>MRU Events:</h2>
             <ul>
-              {messages.map((message, index) => (
+              {messages && messages.map((message, index) => (
                 <li key={index}>{message}</li>
               ))}
             </ul>
