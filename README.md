@@ -117,6 +117,18 @@ Here the XMTPNotifier class is defined which initialises the XMTP client and con
 
 > @note: Make sure the address from which you send the action is not the same as rollup operator.
 
+Clone the repository using the command
+
+```bash
+git clone https://github.com/Architsharma7/XMTP-MRU.git
+```
+
+Set up the env [env setup](https://docs.stf.xyz/build/zero-to-one/build-your-first-mru#setting-up-your-config) and delete the ```deployment.json``` file and run the command inside the `/rollup` directory 
+
+```bash
+npx @stackr/cli@latest register
+```
+
 First, run the Micro rollup using the command inside the `/rollup` directory
 
 ```markdown
