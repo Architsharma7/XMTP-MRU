@@ -123,6 +123,12 @@ Clone the repository using the command
 git clone https://github.com/Architsharma7/XMTP-MRU.git
 ```
 
+install the packages using the command
+```bash
+bun install
+```
+
+
 Set up the env [env setup](https://docs.stf.xyz/build/zero-to-one/build-your-first-mru#setting-up-your-config) and delete the ```deployment.json``` file and run the command inside the `/rollup` directory 
 
 ```bash
