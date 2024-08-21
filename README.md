@@ -115,6 +115,8 @@ Here the XMTPNotifier class is defined which initialises the XMTP client and con
 
 ## How to run?
 
+@note: Make sure the address from which you send the action is not the same as rollup operator.
+
 First, run the Micro rollup using the command inside the `/rollup` directory
 
 ```markdown
